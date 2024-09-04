@@ -1,4 +1,5 @@
 import "./App.css";
+import TimeSet from "./components/TimeSet"
 
 function App() {
   return (
@@ -8,19 +9,11 @@ function App() {
         <div className="length">
           <div className="labels" id="break-label">
             <h3>Break length</h3>
-            <div className="arrows-time">
-              <button id="break-decrement">-</button>
-              <span id="break-length">5</span>
-              <button id="break-increment">+</button>
-            </div>
+            <TimeSet length="5"></TimeSet>
           </div>
           <div className="labels" id="session-label">
             <h3>Session length</h3>
-            <div className="arrows-time">
-              <button id="break-decrement">-</button>
-              <span id="break-length">25</span>
-              <button id="break-increment">+</button>
-            </div>
+            <TimeSet length="25"></TimeSet>
           </div>
         </div>
         <div id="timer-label">
