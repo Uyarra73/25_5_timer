@@ -1,35 +1,46 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import TimeSet from "./components/TimeSet";
+import Sound from "./assets/sound.mp3"
 
 const App = () => {
-  const [breakTime, setBreakTime] = useState(5);
-  const [sessionTime, setSessionTime] = useState(25);
-  const [timeRemaining, setTimeRemaining] = useState(sessionTime * 60);
-  const [isActive, setIsActive] = useState(false);
+  const [breakTime, setBreakTime] = useState(5); // Tiempo de descanso en minutos
+  const [sessionTime, setSessionTime] = useState(25); // Tiempo de sesión en minutos
+  const [timeRemaining, setTimeRemaining] = useState(sessionTime * 60); // Tiempo restante en segundos
+  const [isActive, setIsActive] = useState(false); // Controla si el temporizador está activo
+  const [session, setSession] = useState(true); // Controla si estamos en tiempo de sesión o de descanso
+
+  const audioRef = useRef(new Audio(Sound));
 
   useEffect(() => {
     let interval = null;
-    
+
     if (isActive && timeRemaining > 0) {
       interval = setInterval(() => {
         setTimeRemaining((prevTime) => prevTime - 1);
       }, 1000);
-    } else if (!isActive && timeRemaining !== 0) {
-      clearInterval(interval);
-    } else if (timeRemaining === 0) {
-      clearInterval(interval);
-      // Aquí puedes agregar lógica para alternar entre sesión y descanso
+    } else if (isActive && timeRemaining === 0) {
+      if (session) {
+        setSession(false); // Cambia a tiempo de descanso
+        setTimeRemaining(breakTime * 60); // Establece el tiempo de descanso
+        audioRef.current.play(); // Reproduce el sonido
+      } else {
+        setSession(true); // Cambia a tiempo de sesión
+        setTimeRemaining(sessionTime * 60); // Establece el tiempo de sesión
+      }
+    } else if (!isActive) {
+      clearInterval(interval); // Detener el intervalo cuando se pausa el temporizador
     }
 
-    return () => clearInterval(interval); 
-  }, [isActive, timeRemaining]);
+    return () => clearInterval(interval); // Limpiar el intervalo al desmontar el componente o al cambiar dependencias
+  }, [isActive, timeRemaining, session, sessionTime, breakTime]);
 
+  // Actualiza el tiempo restante cuando cambia el tiempo de sesión o estado de sesión
   useEffect(() => {
     if (!isActive) { 
-      setTimeRemaining(sessionTime * 60);
+      setTimeRemaining(session ? sessionTime * 60 : breakTime * 60);
     }
-  }, [sessionTime, isActive]);
+  }, [sessionTime, breakTime, session, isActive]);
 
   const formatTime = (timeInSeconds) => {
     const minutes = Math.floor(timeInSeconds / 60);
@@ -38,15 +49,24 @@ const App = () => {
   };
 
   const toggleTimer = () => {
-    setIsActive((prevActive) => !prevActive);
+    setIsActive((prevActive) => !prevActive); // Cambia entre activo e inactivo sin reiniciar el tiempo
   };
 
   // Funciones para actualizar tiempos
   const incrementBreak = () => setBreakTime((prev) => prev + 1);
   const decrementBreak = () => setBreakTime((prev) => (prev > 1 ? prev - 1 : prev));
   
-  const incrementSession = () => setSessionTime((prev) => prev + 1);
+  const incrementSession = () => setSessionTime((prev) => (prev < 60 ? prev + 1 : prev)); // Máximo de 60 minutos
   const decrementSession = () => setSessionTime((prev) => (prev > 1 ? prev - 1 : prev));
+
+  // Función para reiniciar el temporizador
+  const resetTimer = () => {
+    setBreakTime(5);
+    setSessionTime(25);
+    setTimeRemaining(25 * 60);
+    setIsActive(false);
+    setSession(true);
+  };
 
   return (
     <div className="App">
@@ -62,12 +82,16 @@ const App = () => {
             <TimeSet length={sessionTime} onIncrement={incrementSession} onDecrement={decrementSession} />
           </div>
         </div>
-        <div id="timer-label">
-          <h2>Session</h2>
+        <div id="timer-label" 
+            style={{background: timeRemaining < 11 ? "red" : "lightgreen",
+              color: timeRemaining < 11? "white" : "black"  // Color en blanco si el tiempo es menor a 11 segundos
+            }} >
+          <h2>{session ? "Session Time" : "Break Time"}</h2>
           <h1 id="time-remaining">{formatTime(timeRemaining)}</h1>
           <button onClick={toggleTimer}>
-            {isActive ? "Pause" : "Start"}
+            {isActive ? <i class="fa-solid fa-pause"></i> : <i class="fa-solid fa-play"></i>}
           </button>
+          <button onClick={resetTimer}><i class="fa-solid fa-rotate-right"></i></button> {/* Botón de reinicio */}
         </div>
       </div>
     </div>
